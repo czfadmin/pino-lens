@@ -3,6 +3,46 @@
 {
 	"version": "2.0.0",
 	"tasks": [
+		// Desktop
+		{
+			"label": "watch-desktop",
+			"dependsOn": [
+				"npm: watch-desktop:tsc",
+				"npm: watch-desktop:esbuild"
+			],
+			"presentation": {
+				"reveal": "never"
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
+			"type": "npm",
+			"script": "watch-desktop:esbuild",
+			"group": "build",
+			"problemMatcher": "$esbuild-watch",
+			"isBackground": true,
+			"label": "npm: watch-desktop:esbuild",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"type": "npm",
+			"script": "watch-desktop:tsc",
+			"group": "build",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"label": "npm: watch-desktop:tsc",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		// web
 		{
 			"label": "watch-web",
 			"dependsOn": [
@@ -14,7 +54,7 @@
 			},
 			"group": {
 				"kind": "build",
-				"isDefault": true
+				"isDefault": false
 			}
 		},
 		{

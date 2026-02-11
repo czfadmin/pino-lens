@@ -128,6 +128,35 @@ async function runDesktop() {
   }
 }
 
+
+async function buildShareLib(){
+  const shareWatcherCtx = await esbuild.context({
+    entryPoints: [
+      'src/shares/**/*.ts',
+    ],
+    bundle: true,
+    format: 'cjs',
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    // platform: 'browser',
+    outdir: 'dist/desktop',
+    external: ['vscode'],
+    logLevel: 'silent',
+    // Node.js global to browser globalThis
+    // define: {
+    // 	global: 'globalThis',
+    // },
+    tsconfig: './tsconfig.node.json',
+    plugins: [esbuildProblemMatcherPlugin],
+  });
+  if (watch) {
+    await shareWatcherCtx.watch();
+  } else {
+    await shareWatcherCtx.rebuild().then((res) => shareWatcherCtx.dispose());
+  }
+}
+
 async function main() {
   if (!web && !desktop) {
     await Promise.all([runWeb(), runDesktop()]);
