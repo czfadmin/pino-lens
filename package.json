@@ -1,7 +1,7 @@
 {
   "name": "pino-log-viewer",
   "displayName": "pino-log-viewer",
-  "description": "pino log viewer",
+  "description": "Visualize and filter pino JSON logs in VS Code (desktop + web)",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.109.0"
@@ -9,16 +9,53 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:pino-log-viewer.openLogFile",
+    "onLanguage:json",
+    "onLanguage:jsonl"
+  ],
   "browser": "./dist/web/extension.js",
   "main": "./dist/desktop/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "pino-log-viewer.helloWorld",
-        "title": "Hello World"
+        "command": "pino-log-viewer.openLogFile",
+        "title": "Open with Pino Log Viewer",
+        "category": "Pino Log Viewer",
+        "icon": "$(list-tree)"
       }
-    ]
+    ],
+    "keybindings": [
+      {
+        "command": "pino-log-viewer.openLogFile",
+        "key": "ctrl+shift+p ctrl+shift+l",
+        "mac": "cmd+shift+p cmd+shift+l",
+        "when": "resourceExtname == .log || resourceExtname == .jsonl || resourceExtname == .ndjson || resourceExtname == .json"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "pino-log-viewer.openLogFile",
+          "group": "navigation@100",
+          "when": "!explorerResourceIsFolder && (resourceExtname == .log || resourceExtname == .jsonl || resourceExtname == .ndjson || resourceExtname == .json || resourceExtname == .txt)"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "pino-log-viewer.openLogFile",
+          "group": "1_open@1",
+          "when": "resourceExtname == .log || resourceExtname == .jsonl || resourceExtname == .ndjson || resourceExtname == .json || resourceExtname == .txt"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "pino-log-viewer.openLogFile",
+          "group": "navigation@100",
+          "when": "resourceExtname == .log || resourceExtname == .jsonl || resourceExtname == .ndjson || resourceExtname == .json || resourceExtname == .txt"
+        }
+      ]
+    }
   },
   "author": {
     "name": "czfadmin",
@@ -41,6 +78,7 @@
     "watch-tests": "tsc -p . -w --outDir dist",
     "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
     "check-types:web": "tsc --project ./tsconfig.web.json --noEmit",
+    "check-types:webview": "tsc --project ./tsconfig.webview.json --noEmit",
     "check-types:desktop": "tsc --project ./tsconfig.node.json --noEmit",
     "lint": "eslint src",
     "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. .",
@@ -51,6 +89,8 @@
     "@types/assert": "^1.5.11",
     "@types/mocha": "^10.0.10",
     "@types/vscode": "^1.109.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/test-web": "^0.0.79",
     "assert": "^2.1.0",
     "esbuild": "^0.27.2",
@@ -62,6 +102,7 @@
     "typescript-eslint": "^8.54.0"
   },
   "dependencies": {
-    "@types/node": "^25.2.2"
+    "@types/node": "^25.2.2",
+    "lit": "^3.3.2"
   }
 }

@@ -129,6 +129,27 @@ async function runDesktop() {
 }
 
 
+async function runWebview() {
+  const webviewCtx = await esbuild.context({
+    entryPoints: ['src/webview/pinoLogViewer.ts'],
+    bundle: true,
+    format: 'iife',
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: 'browser',
+    outdir: 'dist/webview',
+    logLevel: 'silent',
+    tsconfig: './tsconfig.webview.json',
+    plugins: [esbuildProblemMatcherPlugin],
+  });
+  if (watch) {
+    await webviewCtx.watch();
+  } else {
+    await webviewCtx.rebuild().then((res) => webviewCtx.dispose());
+  }
+}
+
 async function buildShareLib(){
   const shareWatcherCtx = await esbuild.context({
     entryPoints: [
@@ -159,17 +180,17 @@ async function buildShareLib(){
 
 async function main() {
   if (!web && !desktop) {
-    await Promise.all([runWeb(), runDesktop()]);
+    await Promise.all([runWeb(), runDesktop(), runWebview()]);
     return;
   }
 
   if (web) {
-    await runWeb();
+    await Promise.all([runWeb(), runWebview()]);
     return;
   }
 
   if (desktop) {
-    await runDesktop();
+    await Promise.all([runDesktop(), runWebview()]);
     return;
   }
 }

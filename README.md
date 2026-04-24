@@ -1,65 +1,62 @@
-# pino-log-viewer README
+# Pino Log Viewer
 
-This is the README for your extension "pino-log-viewer". After writing up a brief description, we recommend including the following sections.
+Pino Log Viewer is a dual-target VS Code extension (desktop + web) for opening, visualizing, and filtering pino JSON logs.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Open log files from command palette or explorer context menu.
+- Parse line-delimited pino JSON logs (NDJSON style).
+- Interactive filtering by:
+	- full-text search (message + JSON payload)
+	- level (trace/debug/info/warn/error/fatal)
+	- time range
+	- max rendered rows
+- Visual table with level badges, timestamp, message, and original line number.
+- Detail panel to inspect full JSON payload for the selected row.
+- Parse diagnostics for invalid JSON rows.
 
-For example if there is an image subfolder under your extension project workspace:
+## Usage
 
-\!\[feature X\]\(images/feature-x.png\)
+1. Run command: Pino Log Viewer: Open Log File
+2. Select a .log/.json/.jsonl/.ndjson file
+3. Filter and inspect logs in the viewer panel
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+You can also right-click a file in explorer and choose the same command.
 
-## Requirements
+## Example Pino Log Format
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+```json
+{"level":30,"time":1713916800000,"msg":"api started","service":"gateway"}
+{"level":50,"time":1713916900000,"msg":"request failed","err":{"code":"E_PIPE"}}
+```
 
-## Extension Settings
+## Development
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+- Install: pnpm install
+- Build all: pnpm run compile
+- Build desktop: pnpm run compile:desktop
+- Build web: pnpm run compile:web
+- Test desktop: pnpm run test:desktop
+- Test web: pnpm run test:web
+- Lint: pnpm run lint
 
-For example:
+## Architecture
 
-This extension contributes the following settings:
+- Desktop host entry: src/desktop/extension.ts
+- Web host entry: src/web/extension.ts
+- Shared parser and viewer logic:
+	- src/shared/pinoLog.ts
+	- src/shared/logViewerPanel.ts
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## Current Limitations
 
-## Known Issues
+- Input format is expected to be one JSON object per line.
+- Very large files are loaded fully into memory before rendering.
+- The extension currently focuses on file-based log inspection (not live stream ingestion).
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Roadmap
 
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- Saved filter presets
+- Column customization
+- Field-specific quick filters
+- Follow mode for appended log files
