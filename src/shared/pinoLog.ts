@@ -21,7 +21,7 @@ export interface PinoParseResult {
   totalLines: number;
 }
 
-const LEVEL_LABELS: Record<number, string> = {
+export const DEFAULT_LEVEL_LABELS: Record<number, string> = {
   10: 'trace',
   20: 'debug',
   30: 'info',
@@ -74,7 +74,8 @@ function normalizeMessage(value: unknown): string {
   return safeStringify(value);
 }
 
-export function parsePinoDocument(content: string): PinoParseResult {
+export function parsePinoDocument(content: string, customLevels?: Record<number, string>): PinoParseResult {
+  const levelMap: Record<number, string> = { ...DEFAULT_LEVEL_LABELS, ...customLevels };
   const lines = content.split(/\r?\n/);
   const entries: PinoLogEntry[] = [];
   const invalidLines: number[] = [];
@@ -96,8 +97,8 @@ export function parsePinoDocument(content: string): PinoParseResult {
       }
 
       const level = typeof asRecord.level === 'number' ? asRecord.level : undefined;
-      const levelLabel = level !== undefined && LEVEL_LABELS[level]
-        ? LEVEL_LABELS[level]
+      const levelLabel = level !== undefined && levelMap[level]
+        ? levelMap[level]
         : 'unknown';
 
       const timestamp = pickTimestamp(asRecord.time ?? asRecord.timestamp);
@@ -133,7 +134,8 @@ export function parsePinoDocument(content: string): PinoParseResult {
  * numbers in the returned entries continue from where the previous parse left
  * off).
  */
-export function parsePinoLines(content: string, lineOffset: number): PinoParseResult {
+export function parsePinoLines(content: string, lineOffset: number, customLevels?: Record<number, string>): PinoParseResult {
+  const levelMap: Record<number, string> = { ...DEFAULT_LEVEL_LABELS, ...customLevels };
   const lines = content.split(/\r?\n/);
   const entries: PinoLogEntry[] = [];
   const invalidLines: number[] = [];
@@ -158,7 +160,7 @@ export function parsePinoLines(content: string, lineOffset: number): PinoParseRe
 
       const level = typeof asRecord.level === 'number' ? asRecord.level : undefined;
       const levelLabel =
-        level !== undefined && LEVEL_LABELS[level] ? LEVEL_LABELS[level] : 'unknown';
+        level !== undefined && levelMap[level] ? levelMap[level] : 'unknown';
 
       const timestamp = pickTimestamp(asRecord.time ?? asRecord.timestamp);
       const msg = normalizeMessage(asRecord.msg ?? asRecord.message);

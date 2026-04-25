@@ -93,9 +93,21 @@ export async function openPinoLogViewer(
     return;
   }
 
+  // Read custom level mapping from VS Code settings
+  const configMapping = vscode.workspace
+    .getConfiguration('pino-log-viewer')
+    .get<Record<string, string>>('customLevelMapping', {});
+  const customLevelMap: Record<number, string> = {};
+  for (const [k, v] of Object.entries(configMapping)) {
+    const n = Number(k);
+    if (Number.isInteger(n) && typeof v === 'string' && v.length > 0) {
+      customLevelMap[n] = v;
+    }
+  }
+
   const rawData = await vscode.workspace.fs.readFile(uri);
   const text = new TextDecoder().decode(rawData);
-  const parsed = parsePinoDocument(text);
+  const parsed = parsePinoDocument(text, customLevelMap);
 
   const name = fileNameFromUri(uri);
   const panel = vscode.window.createWebviewPanel(
@@ -109,15 +121,43 @@ export async function openPinoLogViewer(
     },
   );
 
+  // Stream entries in batches so the UI becomes interactive quickly
+  const STREAM_INITIAL = 1000;
   panel.webview.html = buildHtml(panel.webview, extensionUri, name, {
     fileName: name,
-    entries: parsed.entries,
+    entries: parsed.entries.slice(0, STREAM_INITIAL),
     invalidLines: parsed.invalidLines,
     invalidLineEntries: parsed.invalidLineEntries,
     invalidLineSample: formatLineList(parsed.invalidLines),
     totalLines: parsed.totalLines,
+    totalEntries: parsed.entries.length,
     presets: context.globalState.get<SavedPreset[]>(PRESETS_KEY, []),
+    customLevelMap,
   });
+
+  // --- Streaming: send remaining entries in batches after initial render ---
+  let disposed = false;
+  if (parsed.entries.length > STREAM_INITIAL) {
+    void (async () => {
+      const CHUNK = 1000;
+      for (let i = STREAM_INITIAL; i < parsed.entries.length; i += CHUNK) {
+        // Yield to the event loop between chunks
+        await new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+        if (disposed) {
+          break;
+        }
+        const chunk = parsed.entries.slice(i, i + CHUNK);
+        const progress = Math.min(99, Math.round((i + chunk.length) / parsed.entries.length * 100));
+        const done = i + CHUNK >= parsed.entries.length;
+        void panel.webview.postMessage({
+          command: 'streamChunk',
+          entries: chunk,
+          progress,
+          done,
+        });
+      }
+    })();
+  }
 
   // --- Follow mode state ---
   let followEnabled = false;
@@ -133,7 +173,7 @@ export async function openPinoLogViewer(
       const newBytes = fullData.slice(knownByteOffset);
       knownByteOffset = fullData.byteLength;
       const newText = new TextDecoder().decode(newBytes);
-      const newParsed = parsePinoLines(newText, parsed.totalLines + 1);
+      const newParsed = parsePinoLines(newText, parsed.totalLines + 1, customLevelMap);
       if (newParsed.entries.length === 0 && newParsed.invalidLineEntries.length === 0) {
         return;
       }
@@ -262,7 +302,7 @@ export async function openPinoLogViewer(
 
       const newRaw = await vscode.workspace.fs.readFile(newUri);
       const newText = new TextDecoder().decode(newRaw);
-      const newParsed = parsePinoDocument(newText);
+      const newParsed = parsePinoDocument(newText, customLevelMap);
       const newName = fileNameFromUri(newUri);
       panel.title = `Pino Log Viewer: ${newName}`;
       knownByteOffset = newRaw.byteLength;
@@ -270,17 +310,36 @@ export async function openPinoLogViewer(
         command: 'fileLoaded',
         state: {
           fileName: newName,
-          entries: newParsed.entries,
+          entries: newParsed.entries.slice(0, STREAM_INITIAL),
           invalidLines: newParsed.invalidLines,
           invalidLineEntries: newParsed.invalidLineEntries,
           invalidLineSample: formatLineList(newParsed.invalidLines),
           totalLines: newParsed.totalLines,
+          totalEntries: newParsed.entries.length,
+          customLevelMap,
         },
       });
+      // Stream remaining entries for the newly opened file
+      if (newParsed.entries.length > STREAM_INITIAL) {
+        void (async () => {
+          const CHUNK = 1000;
+          for (let i = STREAM_INITIAL; i < newParsed.entries.length; i += CHUNK) {
+            await new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+            if (disposed) {
+              break;
+            }
+            const chunk = newParsed.entries.slice(i, i + CHUNK);
+            const progress = Math.min(99, Math.round((i + chunk.length) / newParsed.entries.length * 100));
+            const done = i + CHUNK >= newParsed.entries.length;
+            void panel.webview.postMessage({ command: 'streamChunk', entries: chunk, progress, done });
+          }
+        })();
+      }
     },
   );
 
   panel.onDidDispose(() => {
+    disposed = true;
     msgDisposable.dispose();
     stopFollow();
   });

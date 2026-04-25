@@ -55,6 +55,19 @@
           "when": "resourceExtname == .log || resourceExtname == .jsonl || resourceExtname == .ndjson || resourceExtname == .json || resourceExtname == .txt"
         }
       ]
+    },
+    "configuration": {
+      "title": "Pino Log Viewer",
+      "properties": {
+        "pino-log-viewer.customLevelMapping": {
+          "type": "object",
+          "default": {},
+          "description": "Map custom pino level numbers to label strings. For example: {\"35\": \"notice\", \"45\": \"caution\"}. These are merged with the standard pino levels (10–60).",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "author": {

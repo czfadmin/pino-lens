@@ -102,11 +102,33 @@ Any line that is not valid JSON is listed in the **Parse Diagnostics** section a
 
 ## Roadmap
 
+### Completed
+
 - [x] Saved filter presets
 - [x] Column customization (show/hide fields)
 - [x] Field-specific quick filters (click a value to filter by it)
 - [x] Follow mode for appended log files (live tail)
 - [x] Export filtered results
+
+### Planned
+
+#### Performance
+- [x] Virtual / windowed scrolling — render only visible rows so very large files stay responsive
+- [x] Incremental (streaming) file load — parse and display lines as they are read rather than waiting for the full file
+
+#### Search & Filtering
+- [x] Regex search — allow regular expression patterns in the search bar
+- [x] Compound filter expressions — combine field conditions with AND / OR / NOT operators
+- [x] Custom log-level mapping — let users configure non-standard level numbers to label names
+
+#### Visualisation & Analysis
+- [x] Log statistics panel — bar / timeline chart showing level distribution and event frequency over time
+
+#### UX & Navigation
+- [ ] Full keyboard navigation — move between rows, open detail panel, and toggle filters without a mouse
+- [ ] Syntax highlighting in detail panel — colorise keys, strings, numbers, and booleans in the JSON inspector
+#### Integration
+- [ ] Attach to running process — stream pino output directly from a terminal or VS Code task instead of a static file
 
 ---
 
