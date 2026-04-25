@@ -126,3 +126,63 @@ export function parsePinoDocument(content: string): PinoParseResult {
     totalLines: lines.length,
   };
 }
+
+/**
+ * Parse an incremental chunk of text appended to an existing log file.
+ * `lineOffset` should be the number of lines already parsed (so that line
+ * numbers in the returned entries continue from where the previous parse left
+ * off).
+ */
+export function parsePinoLines(content: string, lineOffset: number): PinoParseResult {
+  const lines = content.split(/\r?\n/);
+  const entries: PinoLogEntry[] = [];
+  const invalidLines: number[] = [];
+  const invalidLineEntries: InvalidLineEntry[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const raw = lines[index];
+    if (raw.trim().length === 0) {
+      continue;
+    }
+
+    const absoluteLine = lineOffset + index;
+
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      const asRecord = toRecord(parsed);
+      if (Object.keys(asRecord).length === 0) {
+        invalidLines.push(absoluteLine);
+        invalidLineEntries.push({ line: absoluteLine, raw });
+        continue;
+      }
+
+      const level = typeof asRecord.level === 'number' ? asRecord.level : undefined;
+      const levelLabel =
+        level !== undefined && LEVEL_LABELS[level] ? LEVEL_LABELS[level] : 'unknown';
+
+      const timestamp = pickTimestamp(asRecord.time ?? asRecord.timestamp);
+      const msg = normalizeMessage(asRecord.msg ?? asRecord.message);
+
+      entries.push({
+        line: absoluteLine,
+        raw,
+        level,
+        levelLabel,
+        timestamp,
+        msg,
+        context: asRecord,
+        searchableText: `${msg} ${safeStringify(asRecord)}`.toLowerCase(),
+      });
+    } catch {
+      invalidLines.push(absoluteLine);
+      invalidLineEntries.push({ line: absoluteLine, raw });
+    }
+  }
+
+  return {
+    entries,
+    invalidLines,
+    invalidLineEntries,
+    totalLines: lines.length,
+  };
+}

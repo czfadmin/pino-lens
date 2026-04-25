@@ -6,7 +6,7 @@ export function activate(context: vscode.ExtensionContext) {
     'pino-log-viewer.openLogFile',
     async (resourceUri?: vscode.Uri) => {
       try {
-        await openPinoLogViewer(context.extensionUri, resourceUri);
+        await openPinoLogViewer(context, resourceUri);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         void vscode.window.showErrorMessage(`Failed to open pino log: ${message}`);

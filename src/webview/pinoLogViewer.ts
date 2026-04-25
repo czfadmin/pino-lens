@@ -15,6 +15,7 @@ type LevelLabel =
 
 interface PinoEntry {
   line: number;
+  raw: string;
   levelLabel: LevelLabel;
   timestamp: string | undefined;
   msg: string | undefined;
@@ -36,6 +37,50 @@ interface PinoState {
   totalLines: number;
 }
 
+interface AppendMessage {
+  command: 'appendEntries';
+  entries: PinoEntry[];
+  invalidLines: number[];
+  invalidLineEntries: InvalidLineEntry[];
+  totalLines: number;
+}
+
+interface FollowStateMessage {
+  command: 'followState';
+  enabled: boolean;
+}
+
+interface FilterState {
+  search: string;
+  level: string;
+  from: string;
+  to: string;
+  limit: number;
+}
+
+interface SavedPreset {
+  name: string;
+  filter: FilterState;
+}
+
+interface PresetsLoadedMessage {
+  command: 'presetsLoaded';
+  presets: SavedPreset[];
+}
+
+type ColumnId = 'line' | 'level' | 'time' | 'message';
+
+const ALL_COLUMNS: { id: ColumnId; label: string; width?: string }[] = [
+  { id: 'line', label: 'Line', width: '72px' },
+  { id: 'level', label: 'Level', width: '120px' },
+  { id: 'time', label: 'Time', width: '180px' },
+  { id: 'message', label: 'Message' },
+];
+
+type VisibleColumns = Record<ColumnId, boolean>;
+
+const DEFAULT_COLUMNS: VisibleColumns = { line: true, level: true, time: true, message: true };
+
 class PinoLogViewer extends LitElement {
   static override properties = {
     _search: { state: true },
@@ -50,6 +95,10 @@ class PinoLogViewer extends LitElement {
     _paginated: { state: true },
     _pageSize: { state: true },
     _currentPage: { state: true },
+    _followMode: { state: true },
+    _visibleColumns: { state: true },
+    _presets: { state: true },
+    _presetName: { state: true },
   };
 
   static override styles = css`
@@ -332,6 +381,168 @@ class PinoLogViewer extends LitElement {
       width: 64px;
     }
 
+    details.col-picker {
+      font-size: 12px;
+      grid-column: 1 / -1;
+    }
+
+    details.col-picker summary {
+      cursor: pointer;
+      color: var(--vscode-descriptionForeground);
+      user-select: none;
+      padding: 4px 0;
+      list-style: none;
+      font-size: 12px;
+    }
+
+    details.col-picker summary::-webkit-details-marker,
+    details.col-picker summary::marker {
+      display: none;
+    }
+
+    details.col-picker summary::before {
+      content: '▶ ';
+      font-size: 10px;
+    }
+
+    details.col-picker[open] summary::before {
+      content: '▼ ';
+    }
+
+    .col-picker-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      padding: 8px 0 4px;
+    }
+
+    details.presets-picker {
+      font-size: 12px;
+      grid-column: 1 / -1;
+    }
+
+    details.presets-picker summary {
+      cursor: pointer;
+      color: var(--vscode-descriptionForeground);
+      user-select: none;
+      padding: 4px 0;
+      list-style: none;
+      font-size: 12px;
+    }
+
+    details.presets-picker summary::-webkit-details-marker,
+    details.presets-picker summary::marker {
+      display: none;
+    }
+
+    details.presets-picker summary::before {
+      content: '▶ ';
+      font-size: 10px;
+    }
+
+    details.presets-picker[open] summary::before {
+      content: '▼ ';
+    }
+
+    .presets-body {
+      display: grid;
+      gap: 8px;
+      padding: 8px 0 4px;
+    }
+
+    .preset-save-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .preset-save-row input {
+      flex: 1;
+    }
+
+    .preset-save-row button {
+      width: auto;
+      flex-shrink: 0;
+      margin-top: 0;
+    }
+
+    .preset-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .preset-item {
+      display: flex;
+      align-items: center;
+    }
+
+    .preset-item .load-btn {
+      width: auto;
+      padding: 3px 10px;
+      margin-top: 0;
+      font-size: 11px;
+      border-radius: 6px 0 0 6px;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .preset-item .delete-btn {
+      width: auto;
+      padding: 3px 7px;
+      margin-top: 0;
+      font-size: 11px;
+      border-radius: 0 6px 6px 0;
+      background: color-mix(
+        in srgb,
+        var(--vscode-inputValidation-errorBackground, #5a1d1d) 80%,
+        transparent
+      );
+    }
+
+    .detail-tree {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .detail-tree td {
+      padding: 3px 6px;
+      border-bottom: 1px solid
+        color-mix(in srgb, var(--vscode-editorWidget-border) 40%, transparent);
+      vertical-align: top;
+    }
+
+    .dt-key {
+      color: var(--vscode-descriptionForeground);
+      font-weight: 600;
+      white-space: nowrap;
+      min-width: 80px;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dt-val {
+      word-break: break-all;
+    }
+
+    .dt-clickable {
+      cursor: pointer;
+      border-radius: 3px;
+      padding: 1px 3px;
+    }
+
+    .dt-clickable:hover {
+      background: color-mix(
+        in srgb,
+        var(--vscode-button-background) 20%,
+        transparent
+      );
+      text-decoration: underline;
+    }
+
     @media (max-width: 980px) {
       .layout {
         grid-template-columns: 1fr;
@@ -356,6 +567,16 @@ class PinoLogViewer extends LitElement {
   _pageSize = 100;
   _currentPage = 0;
 
+  // Follow mode
+  _followMode = false;
+
+  // Column visibility
+  _visibleColumns: VisibleColumns = { ...DEFAULT_COLUMNS };
+
+  // Saved presets
+  _presets: SavedPreset[] = [];
+  _presetName = '';
+
   private _data: PinoState = {
     fileName: '',
     entries: [],
@@ -369,12 +590,14 @@ class PinoLogViewer extends LitElement {
     super();
     const scriptTag = document.getElementById('pinoInitialData');
     const raw = scriptTag?.textContent ?? '{}';
-    this._data = JSON.parse(raw) as PinoState;
+    const initialPayload = JSON.parse(raw) as PinoState & { presets?: SavedPreset[] };
+    this._data = initialPayload;
     this._filtered = this._data.entries;
+    this._presets = initialPayload.presets ?? [];
 
     window.addEventListener('message', (e: MessageEvent) => {
-      const msg = e.data as { command: string; state?: PinoState };
-      if (msg.command === 'fileLoaded' && msg.state) {
+      const msg = e.data as { command: string; state?: PinoState } | AppendMessage | FollowStateMessage | PresetsLoadedMessage;
+      if (msg.command === 'fileLoaded' && 'state' in msg && msg.state) {
         this._data = msg.state;
         this._filtered = msg.state.entries;
         this._activeLine = undefined;
@@ -384,12 +607,48 @@ class PinoLogViewer extends LitElement {
         this._to = '';
         this._limit = 1000;
         this._currentPage = 0;
+        this._followMode = false;
+        return;
+      }
+      if (msg.command === 'appendEntries') {
+        const append = msg as AppendMessage;
+        this._data = {
+          ...this._data,
+          entries: [...this._data.entries, ...append.entries],
+          invalidLines: [...this._data.invalidLines, ...append.invalidLines],
+          invalidLineEntries: [...this._data.invalidLineEntries, ...append.invalidLineEntries],
+          totalLines: append.totalLines,
+        };
+        // Re-apply current filters on new entries and append matching ones
+        const newMatches = this._applyFiltersOn(append.entries);
+        if (newMatches.length > 0) {
+          this._filtered = [...this._filtered, ...newMatches];
+        }
+        if (this._followMode) {
+          this._scrollToBottom();
+        }
+        return;
+      }
+      if (msg.command === 'presetsLoaded') {
+        this._presets = (msg as PresetsLoadedMessage).presets;
+        return;
+      }
+      if (msg.command === 'followState') {
+        this._followMode = (msg as FollowStateMessage).enabled;
+        if (this._followMode) {
+          this._scrollToBottom();
+        }
       }
     });
   }
 
   private _openFile(): void {
     vscodeApi.postMessage({ command: 'openFile' });
+  }
+
+  private _exportFiltered(format: 'ndjson' | 'json'): void {
+    const lines = this._filtered.map((e) => e.raw);
+    vscodeApi.postMessage({ command: 'exportFiltered', format, lines });
   }
 
   private _toMillis(value: string): number | undefined {
@@ -400,13 +659,13 @@ class PinoLogViewer extends LitElement {
     return Number.isNaN(parsed) ? undefined : parsed;
   }
 
-  private _applyFilters(): PinoEntry[] {
+  private _applyFiltersOn(entries: PinoEntry[]): PinoEntry[] {
     const query = this._search.trim().toLowerCase();
     const level = this._level;
     const fromMillis = this._toMillis(this._from);
     const toMillisValue = this._toMillis(this._to);
 
-    return this._data.entries.filter((entry) => {
+    return entries.filter((entry) => {
       if (query && !entry.searchableText.includes(query)) {
         return false;
       }
@@ -428,6 +687,10 @@ class PinoLogViewer extends LitElement {
     });
   }
 
+  private _applyFilters(): PinoEntry[] {
+    return this._applyFiltersOn(this._data.entries);
+  }
+
   private _confirm(): void {
     this._filtered = this._applyFilters();
     this._activeLine = undefined;
@@ -444,6 +707,20 @@ class PinoLogViewer extends LitElement {
     this._filtered = this._data.entries;
     this._showInvalidLines = false;
     this._currentPage = 0;
+  }
+
+  private _toggleFollow(): void {
+    vscodeApi.postMessage({ command: 'toggleFollow' });
+  }
+
+  private _scrollToBottom(): void {
+    // Use requestAnimationFrame so Lit has time to render the new rows first
+    requestAnimationFrame(() => {
+      const wrapper = this.shadowRoot?.querySelector('.table-wrapper');
+      if (wrapper) {
+        wrapper.scrollTop = wrapper.scrollHeight;
+      }
+    });
   }
 
   private _showDetail(entry: PinoEntry): void {
@@ -471,14 +748,15 @@ class PinoLogViewer extends LitElement {
   }
 
   private _renderRows(shown: Array<{ kind: 'entry'; entry: PinoEntry } | { kind: 'invalid'; entry: InvalidLineEntry }>): TemplateResult[] {
+    const cols = this._visibleColumns;
     return shown.map((row) => {
       if (row.kind === 'invalid') {
         return html`
           <tr class="invalid-row">
-            <td>${row.entry.line}</td>
-            <td><span class="badge level-unknown">invalid</span></td>
-            <td>-</td>
-            <td>${row.entry.raw}</td>
+            ${cols.line ? html`<td>${row.entry.line}</td>` : nothing}
+            ${cols.level ? html`<td><span class="badge level-unknown">invalid</span></td>` : nothing}
+            ${cols.time ? html`<td>-</td>` : nothing}
+            ${cols.message ? html`<td>${row.entry.raw}</td>` : nothing}
           </tr>
         `;
       }
@@ -488,17 +766,86 @@ class PinoLogViewer extends LitElement {
           class=${this._activeLine === entry.line ? 'active' : ''}
           @click=${() => this._showDetail(entry)}
         >
-          <td>${entry.line}</td>
-          <td>
-            <span class="badge level-${entry.levelLabel || 'unknown'}"
-              >${entry.levelLabel || 'unknown'}</span
-            >
-          </td>
-          <td>${entry.timestamp || '-'}</td>
-          <td>${entry.msg || '-'}</td>
+          ${cols.line ? html`<td>${entry.line}</td>` : nothing}
+          ${cols.level ? html`<td><span class="badge level-${entry.levelLabel || 'unknown'}">${entry.levelLabel || 'unknown'}</span></td>` : nothing}
+          ${cols.time ? html`<td>${entry.timestamp || '-'}</td>` : nothing}
+          ${cols.message ? html`<td>${entry.msg || '-'}</td>` : nothing}
         </tr>
       `;
     });
+  }
+
+  private _toggleColumn(id: ColumnId): void {
+    this._visibleColumns = { ...this._visibleColumns, [id]: !this._visibleColumns[id] };
+  }
+
+  private _savePreset(): void {
+    const name = this._presetName.trim();
+    if (!name) {
+      return;
+    }
+    const filter: FilterState = {
+      search: this._search,
+      level: this._level,
+      from: this._from,
+      to: this._to,
+      limit: this._limit,
+    };
+    vscodeApi.postMessage({ command: 'savePreset', name, filter });
+    this._presetName = '';
+  }
+
+  private _loadPreset(preset: SavedPreset): void {
+    this._search = preset.filter.search;
+    this._level = preset.filter.level;
+    this._from = preset.filter.from;
+    this._to = preset.filter.to;
+    this._limit = preset.filter.limit;
+    this._confirm();
+  }
+
+  private _deletePreset(name: string): void {
+    vscodeApi.postMessage({ command: 'deletePreset', name });
+  }
+
+  private _quickFilter(value: unknown): void {
+    this._search = value === null ? 'null' : String(value);
+    this._confirm();
+  }
+
+  private _renderDetailTree(context: unknown): TemplateResult {
+    const record =
+      context !== null && typeof context === 'object' && !Array.isArray(context)
+        ? (context as Record<string, unknown>)
+        : {};
+    const entries = Object.entries(record);
+    if (entries.length === 0) {
+      return html`<div class="empty">No payload data.</div>`;
+    }
+    return html`
+      <div style="overflow:auto;max-height:46vh;">
+        <table class="detail-tree">
+          ${entries.map(([key, val]) => {
+            const isPrimitive = val === null || typeof val !== 'object';
+            const full = isPrimitive ? String(val) : JSON.stringify(val);
+            const display = full.length > 120 ? full.slice(0, 120) + '\u2026' : full;
+            const filterVal = isPrimitive ? val : full;
+            return html`
+              <tr>
+                <td class="dt-key" title=${key}>${key}</td>
+                <td class="dt-val">
+                  <span
+                    class="dt-clickable"
+                    title="Click to quick-filter by this value"
+                    @click=${() => this._quickFilter(filterVal)}
+                  >${display}</span>
+                </td>
+              </tr>
+            `;
+          })}
+        </table>
+      </div>
+    `;
   }
 
   override render(): TemplateResult {
@@ -601,9 +948,7 @@ class PinoLogViewer extends LitElement {
 
     const detailHeader = active
       ? `Line ${active.line} | ${active.levelLabel.toUpperCase()} | ${active.timestamp ?? 'N/A'}`
-      : 'Select one row to inspect full JSON payload.';
-
-    const detailJson = active ? JSON.stringify(active.context, null, 2) : '{}';
+      : 'Select a row to inspect the full JSON payload.';
 
     return html`
       <section class="file-bar">
@@ -611,6 +956,8 @@ class PinoLogViewer extends LitElement {
           >${this._data.fileName || 'No file loaded'}</span
         >
         <button type="button" @click=${this._openFile}>Open File…</button>
+        <button type="button" @click=${() => this._exportFiltered('ndjson')} ?disabled=${this._filtered.length === 0}>Export NDJSON</button>
+        <button type="button" @click=${() => this._exportFiltered('json')} ?disabled=${this._filtered.length === 0}>Export JSON</button>
       </section>
 
       <section class="toolbar">
@@ -710,6 +1057,78 @@ class PinoLogViewer extends LitElement {
           />
           Enable pagination
         </label>
+
+        <label class="toggle-label follow-toggle">
+          <input
+            type="checkbox"
+            .checked=${this._followMode}
+            @change=${this._toggleFollow}
+          />
+          Follow (live tail)
+        </label>
+
+        <details class="col-picker">
+          <summary>Columns</summary>
+          <div class="col-picker-list">
+            ${ALL_COLUMNS.map(
+              (col) => html`
+                <label class="toggle-label">
+                  <input
+                    type="checkbox"
+                    .checked=${this._visibleColumns[col.id]}
+                    @change=${() => this._toggleColumn(col.id)}
+                  />
+                  ${col.label}
+                </label>
+              `,
+            )}
+          </div>
+        </details>
+
+        <details class="presets-picker">
+          <summary>Presets</summary>
+          <div class="presets-body">
+            <div class="preset-save-row">
+              <input
+                type="text"
+                .value=${this._presetName}
+                @input=${(e: Event) => {
+                  this._presetName = (e.target as HTMLInputElement).value;
+                }}
+                placeholder="Preset name…"
+              />
+              <button
+                type="button"
+                ?disabled=${!this._presetName.trim()}
+                @click=${this._savePreset}
+              >Save current filter</button>
+            </div>
+            ${this._presets.length === 0
+              ? html`<div class="empty">No saved presets yet.</div>`
+              : html`
+                <div class="preset-list">
+                  ${this._presets.map(
+                    (p) => html`
+                      <div class="preset-item">
+                        <button
+                          type="button"
+                          class="load-btn"
+                          title=${p.name}
+                          @click=${() => this._loadPreset(p)}
+                        >${p.name}</button>
+                        <button
+                          type="button"
+                          class="delete-btn"
+                          title="Delete preset"
+                          @click=${() => this._deletePreset(p.name)}
+                        >×</button>
+                      </div>
+                    `,
+                  )}
+                </div>
+              `}
+          </div>
+        </details>
       </section>
 
       <section class="meta">
@@ -724,10 +1143,11 @@ class PinoLogViewer extends LitElement {
             <table>
               <thead>
                 <tr>
-                  <th style="width:72px;">Line</th>
-                  <th style="width:120px;">Level</th>
-                  <th style="width:180px;">Time</th>
-                  <th>Message</th>
+                  ${ALL_COLUMNS.map((col) =>
+                    this._visibleColumns[col.id]
+                      ? html`<th style=${col.width ? `width:${col.width};` : ''}>${col.label}</th>`
+                      : nothing,
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -743,7 +1163,7 @@ class PinoLogViewer extends LitElement {
 
         <div class="panel detail">
           <div class="meta">${detailHeader}</div>
-          <pre>${detailJson}</pre>
+          ${active ? this._renderDetailTree(active.context) : nothing}
         </div>
       </section>
     `;
