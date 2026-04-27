@@ -10,9 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:pino-log-viewer.openLogFile",
-    "onLanguage:json",
-    "onLanguage:jsonl"
+    "onCommand:pino-log-viewer.openLogFile"
   ],
   "browser": "./dist/web/extension.js",
   "main": "./dist/desktop/extension.js",
