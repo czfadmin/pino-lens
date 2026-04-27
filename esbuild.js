@@ -65,10 +65,10 @@ const testBundlePlugin = {
 
 async function runWeb() {
   const webCtx = await esbuild.context({
-    entryPoints: [
-      'src/web/extension.ts',
-      'src/web/test/suite/extensionTests.ts',
-    ],
+    entryPoints: {
+      'extension': 'src/shared/extension.ts',
+      'test/suite/extensionTests': 'src/web/test/suite/extensionTests.ts',
+    },
     bundle: true,
     format: 'cjs',
     minify: production,
@@ -101,10 +101,10 @@ async function runWeb() {
 
 async function runDesktop() {
   const desktopCtx = await esbuild.context({
-    entryPoints: [
-      'src/desktop/extension.ts',
-      'src/desktop/test/extension.test.ts',
-    ],
+    entryPoints: {
+      'extension': 'src/shared/extension.ts',
+      'test/extension.test': 'src/desktop/test/extension.test.ts',
+    },
     bundle: true,
     format: 'cjs',
     minify: production,
