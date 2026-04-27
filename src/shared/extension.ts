@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { openPinoLogViewer } from '../shared/logViewerPanel';
+import { openPinoLogViewer } from './logViewerPanel';
 
 export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand(
