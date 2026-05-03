@@ -1,6 +1,6 @@
 {
-  "name": "pino-log-viewer",
-  "displayName": "pino-log-viewer",
+  "name": "pino-lens",
+  "displayName": "pino-lens",
   "description": "Visualize and filter pino JSON logs in VS Code (desktop + web)",
   "version": "0.0.1",
   "engines": {
@@ -12,6 +12,7 @@
   "activationEvents": [
     "onCommand:pino-log-viewer.openLogFile"
   ],
+  "publisher": "czfadmin",
   "browser": "./dist/web/extension.js",
   "main": "./dist/desktop/extension.js",
   "contributes": {
@@ -72,6 +73,10 @@
     "name": "czfadmin",
     "url": "https://github.com/czfadmin"
   },
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/czfadmin/pino-log-viewer.git"
+  },
   "scripts": {
     "test:web": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",
     "pretest": "pnpm run compile-web",
@@ -88,6 +93,7 @@
     "watch-desktop:tsc": "tsc --noEmit --watch --project tsconfig.node.json",
     "watch-tests": "tsc -p . -w --outDir dist",
     "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "check-types": "npm-run-all -p check-types:desktop check-types:web check-types:webview",
     "check-types:web": "tsc --project ./tsconfig.web.json --noEmit",
     "check-types:webview": "tsc --project ./tsconfig.webview.json --noEmit",
     "check-types:desktop": "tsc --project ./tsconfig.node.json --noEmit",

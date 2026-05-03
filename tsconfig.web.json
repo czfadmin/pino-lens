@@ -5,9 +5,9 @@
 		"outDir": "dist",
 		"composite": true,
 		"lib": [
-			"ES2020", "WebWorker",
-      "Dom"
+			"ES2020", "WebWorker"
 		],
+		"skipLibCheck": true,
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true,   /* enable all strict type-checking options */
