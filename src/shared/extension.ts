@@ -3,7 +3,7 @@ import { openPinoLogViewer } from './logViewerPanel';
 
 export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand(
-    'pino-log-viewer.openLogFile',
+    'pino-lens.openLogFile',
     async (resourceUri?: vscode.Uri) => {
       try {
         await openPinoLogViewer(context, resourceUri);

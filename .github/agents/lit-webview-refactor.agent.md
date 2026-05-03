@@ -20,7 +20,7 @@ Add `lit` to `dependencies` in `package.json`. Run `pnpm install`.
 ### 2. Create the Lit webview source
 Create `src/webview/pinoLogViewer.ts`:
 - Import `LitElement`, `html`, `css`, `property`, `state` from `lit`.
-- Define a `<pino-log-viewer>` custom element that accepts an `initialData` attribute (JSON string).
+- Define a `<pino-lens>` custom element that accepts an `initialData` attribute (JSON string).
 - Re-implement all filter/render/detail logic from the old inline `<script>` as Lit reactive properties and render methods.
 - Keep styles in a static `styles = css\`...\`` block, preserving all VSCode CSS variable references.
 - Use `unsafeCSS` only for dynamic values that cannot be expressed as custom properties.
@@ -51,7 +51,7 @@ Call `runWebview()` alongside the existing targets in `main()`.
 Replace the inline `<script>` block with:
 - A `<script type="application/json" id="pinoInitialData">` tag containing the serialized payload (no live JS interpolation risk).
 - A `<script nonce="..." src="...">` tag where `src` is `webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'webview', 'pinoLogViewer.js'))`.
-- A single `<pino-log-viewer></pino-log-viewer>` element in `<body>`.
+- A single `<pino-lens></pino-lens>` element in `<body>`.
 - Update CSP to allow `script-src 'nonce-...' ${webview.cspSource}`.
 
 Pass `extensionUri` into `buildHtml` (add it as a parameter; update `openPinoLogViewer` to supply `context.extensionUri`).

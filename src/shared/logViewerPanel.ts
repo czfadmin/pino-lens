@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { parsePinoDocument, parsePinoLines } from './pinoLog';
 
-const VIEW_TYPE = 'pino-log-viewer.panel';
+const VIEW_TYPE = 'pino-lens.panel';
 
 function fileNameFromUri(uri: vscode.Uri): string {
   const segments = uri.path.split('/').filter((part) => part.length > 0);
@@ -46,7 +46,7 @@ function buildHtml(
 </head>
 <body>
   <script type="application/json" id="pinoInitialData">${initialData}</script>
-  <pino-log-viewer></pino-log-viewer>
+  <pino-lens></pino-lens>
   <script src="${scriptUri}"></script>
 </body>
 </html>`;
@@ -57,7 +57,7 @@ async function pickLogFileUri(): Promise<vscode.Uri | undefined> {
     canSelectFiles: true,
     canSelectFolders: false,
     canSelectMany: false,
-    openLabel: 'Open Pino Log File',
+    openLabel: 'Open Pino Lens',
     filters: {
       'Log files': ['log', 'txt', 'json', 'jsonl', 'ndjson'],
       'All files': ['*'],
@@ -67,7 +67,7 @@ async function pickLogFileUri(): Promise<vscode.Uri | undefined> {
   return picked?.[0];
 }
 
-const PRESETS_KEY = 'pino-log-viewer.presets';
+const PRESETS_KEY = 'pino-lens.presets';
 
 interface FilterState {
   search: string;
@@ -95,7 +95,7 @@ export async function openPinoLogViewer(
 
   // Read custom level mapping from VS Code settings
   const configMapping = vscode.workspace
-    .getConfiguration('pino-log-viewer')
+    .getConfiguration('pino-lens')
     .get<Record<string, string>>('customLevelMapping', {});
   const customLevelMap: Record<number, string> = {};
   for (const [k, v] of Object.entries(configMapping)) {
@@ -112,7 +112,7 @@ export async function openPinoLogViewer(
   const name = fileNameFromUri(uri);
   const panel = vscode.window.createWebviewPanel(
     VIEW_TYPE,
-    `Pino Log Viewer: ${name}`,
+    `Pino Lens: ${name}`,
     vscode.ViewColumn.Active,
     {
       enableScripts: true,
@@ -304,7 +304,7 @@ export async function openPinoLogViewer(
       const newText = new TextDecoder().decode(newRaw);
       const newParsed = parsePinoDocument(newText, customLevelMap);
       const newName = fileNameFromUri(newUri);
-      panel.title = `Pino Log Viewer: ${newName}`;
+      panel.title = `Pino Lens: ${newName}`;
       knownByteOffset = newRaw.byteLength;
       void panel.webview.postMessage({
         command: 'fileLoaded',

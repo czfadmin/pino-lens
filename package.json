@@ -2,7 +2,7 @@
   "name": "pino-lens",
   "displayName": "pino-lens",
   "description": "Visualize and filter pino JSON logs in VS Code (desktop + web)",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.109.0"
   },
@@ -10,24 +10,25 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:pino-log-viewer.openLogFile"
+    "onCommand:pino-lens.openLogFile"
   ],
   "license": "MIT",
+  "icon": "images/icon.png",
   "publisher": "czfadmin",
   "browser": "./dist/web/extension.js",
   "main": "./dist/desktop/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "pino-log-viewer.openLogFile",
-        "title": "Open with Pino Log Viewer",
+        "command": "pino-lens.openLogFile",
+        "title": "Open with Pino Lens",
         "category": "Pino Log Viewer",
         "icon": "$(list-tree)"
       }
     ],
     "keybindings": [
       {
-        "command": "pino-log-viewer.openLogFile",
+        "command": "pino-lens.openLogFile",
         "key": "ctrl+shift+p ctrl+shift+l",
         "mac": "cmd+shift+p cmd+shift+l",
         "when": "resourceExtname == .log || resourceExtname == .jsonl || resourceExtname == .ndjson || resourceExtname == .json"
@@ -36,30 +37,30 @@
     "menus": {
       "explorer/context": [
         {
-          "command": "pino-log-viewer.openLogFile",
+          "command": "pino-lens.openLogFile",
           "group": "navigation@100",
           "when": "!explorerResourceIsFolder && (resourceExtname == .log || resourceExtname == .jsonl || resourceExtname == .ndjson || resourceExtname == .json || resourceExtname == .txt)"
         }
       ],
       "editor/title/context": [
         {
-          "command": "pino-log-viewer.openLogFile",
+          "command": "pino-lens.openLogFile",
           "group": "1_open@1",
           "when": "resourceExtname == .log || resourceExtname == .jsonl || resourceExtname == .ndjson || resourceExtname == .json || resourceExtname == .txt"
         }
       ],
       "editor/context": [
         {
-          "command": "pino-log-viewer.openLogFile",
+          "command": "pino-lens.openLogFile",
           "group": "navigation@100",
           "when": "resourceExtname == .log || resourceExtname == .jsonl || resourceExtname == .ndjson || resourceExtname == .json || resourceExtname == .txt"
         }
       ]
     },
     "configuration": {
-      "title": "Pino Log Viewer",
+      "title": "Pino Lens",
       "properties": {
-        "pino-log-viewer.customLevelMapping": {
+        "pino-lens.customLevelMapping": {
           "type": "object",
           "default": {},
           "description": "Map custom pino level numbers to label strings. For example: {\"35\": \"notice\", \"45\": \"caution\"}. These are merged with the standard pino levels (10–60).",
@@ -76,7 +77,7 @@
   },
   "repository": {
     "type": "github",
-    "url": "https://github.com/czfadmin/pino-log-viewer.git"
+    "url": "https://github.com/czfadmin/pino-lens.git"
   },
   "scripts": {
     "test:web": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",

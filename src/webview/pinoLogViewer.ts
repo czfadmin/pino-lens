@@ -1796,4 +1796,4 @@ class PinoLogViewer extends LitElement {
   }
 }
 
-customElements.define('pino-log-viewer', PinoLogViewer);
+customElements.define('pino-lens', PinoLogViewer);

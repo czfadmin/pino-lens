@@ -18,3 +18,7 @@ esbuild.js
 .vscode
 tmp/
 tests/*.log
+*.tsbuildinfo
+AGENTS.md
+.node-version
+tsconfig.*.json
