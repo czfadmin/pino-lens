@@ -2,7 +2,7 @@
 
 A VS Code extension (desktop + web) for opening, visualizing, and filtering [pino](https://getpino.io/) JSON logs — right inside your editor.
 
-Stop squinting at raw NDJSON files. Pino Log Viewer gives you an interactive table with level badges, timestamps, full-text search, and a detail panel for any row, all without leaving VS Code.
+Stop squinting at raw NDJSON files. `Pino Lens` gives you an interactive table with level badges, timestamps, full-text search, and a detail panel for any row, all without leaving VS Code.
 
 ![screenshot.png](images/screenshot.png)
 ---
@@ -42,16 +42,16 @@ Stop squinting at raw NDJSON files. Pino Log Viewer gives you an interactive tab
 **Method 1 — Command Palette**
 
 1. Press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS).
-2. Type **Pino Log Viewer: Open Log File** and press Enter.
+2. Type **Pino Lens: Open Log File** and press Enter.
 3. Select your `.log` / `.json` / `.jsonl` / `.ndjson` file.
 
 **Method 2 — Explorer context menu**
 
-Right-click any supported file in the Explorer sidebar and choose **Open with Pino Log Viewer**.
+Right-click any supported file in the Explorer sidebar and choose **Open with Pino Lens**.
 
 **Method 3 — Editor context menu / title bar**
 
-With a supported file open in the editor, right-click the editor area or the tab title and choose **Open with Pino Log Viewer**.
+With a supported file open in the editor, right-click the editor area or the tab title and choose **Open with Pino Lens**.
 
 **Method 4 — Keyboard shortcut**
 
@@ -70,7 +70,7 @@ Once the viewer is open, use the filter bar at the top to:
 
 ## Expected Log Format
 
-Pino Log Viewer expects **one JSON object per line** (NDJSON). Standard pino output already uses this format:
+`Pino Lens` expects **one JSON object per line** (NDJSON). Standard pino output already uses this format:
 
 ```jsonl
 {"level":30,"time":1713916800000,"pid":1234,"hostname":"server-1","msg":"api started","service":"gateway"}
