@@ -22,3 +22,4 @@ tests/*.log
 AGENTS.md
 .node-version
 tsconfig.*.json
+.mypy_cache
