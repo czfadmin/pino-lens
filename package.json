@@ -2,7 +2,7 @@
   "name": "pino-lens",
   "displayName": "pino-lens",
   "description": "Visualize and filter pino JSON logs in VS Code (desktop + web)",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.109.0"
   },
@@ -22,7 +22,7 @@
       {
         "command": "pino-lens.openLogFile",
         "title": "Open with Pino Lens",
-        "category": "Pino Log Viewer",
+        "category": "Pino Lens",
         "icon": "$(list-tree)"
       }
     ],

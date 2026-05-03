@@ -6,4 +6,5 @@ node_modules
 .env
 *.tsbuildinfo
 tmp
-test/*.log
+tests/*.log
+.mypy_cache

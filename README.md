@@ -1,9 +1,10 @@
-# Pino Log Viewer
+# Pino Lens
 
 A VS Code extension (desktop + web) for opening, visualizing, and filtering [pino](https://getpino.io/) JSON logs — right inside your editor.
 
 Stop squinting at raw NDJSON files. Pino Log Viewer gives you an interactive table with level badges, timestamps, full-text search, and a detail panel for any row, all without leaving VS Code.
 
+![screenshot.png](images/screenshot.png)
 ---
 
 ## Features
