@@ -12,6 +12,7 @@
   "activationEvents": [
     "onCommand:pino-log-viewer.openLogFile"
   ],
+  "license": "MIT",
   "publisher": "czfadmin",
   "browser": "./dist/web/extension.js",
   "main": "./dist/desktop/extension.js",
