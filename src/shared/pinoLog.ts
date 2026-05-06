@@ -74,12 +74,65 @@ function normalizeMessage(value: unknown): string {
   return safeStringify(value);
 }
 
+function makeEntry(
+  asRecord: Record<string, unknown>,
+  lineNumber: number,
+  rawText: string,
+  levelMap: Record<number, string>,
+): PinoLogEntry {
+  const level = typeof asRecord.level === 'number' ? asRecord.level : undefined;
+  const levelLabel =
+    level !== undefined && levelMap[level] ? levelMap[level] : 'unknown';
+  const timestamp = pickTimestamp(asRecord.time ?? asRecord.timestamp);
+  const msg = normalizeMessage(asRecord.msg ?? asRecord.message);
+  return {
+    line: lineNumber,
+    raw: rawText,
+    level,
+    levelLabel,
+    timestamp,
+    msg,
+    context: asRecord,
+    searchableText: `${msg} ${safeStringify(asRecord)}`.toLowerCase(),
+  };
+}
+
 export function parsePinoDocument(content: string, customLevels?: Record<number, string>): PinoParseResult {
   const levelMap: Record<number, string> = { ...DEFAULT_LEVEL_LABELS, ...customLevels };
-  const lines = content.split(/\r?\n/);
   const entries: PinoLogEntry[] = [];
   const invalidLines: number[] = [];
   const invalidLineEntries: InvalidLineEntry[] = [];
+
+  // Detect JSON array format (e.g. exported log files as a JSON array)
+  const trimmed = content.trim();
+  if (trimmed.startsWith('[')) {
+    try {
+      const arr: unknown = JSON.parse(trimmed);
+      if (Array.isArray(arr)) {
+        arr.forEach((item, index) => {
+          const lineNumber = index + 1;
+          const raw = safeStringify(item);
+          const asRecord = toRecord(item);
+          if (Object.keys(asRecord).length === 0) {
+            invalidLines.push(lineNumber);
+            invalidLineEntries.push({ line: lineNumber, raw });
+          } else {
+            entries.push(makeEntry(asRecord, lineNumber, raw, levelMap));
+          }
+        });
+        return {
+          entries,
+          invalidLines,
+          invalidLineEntries,
+          totalLines: arr.length,
+        };
+      }
+    } catch {
+      // Not a valid JSON array — fall through to line-by-line parsing
+    }
+  }
+
+  const lines = content.split(/\r?\n/);
 
   for (let index = 0; index < lines.length; index += 1) {
     const raw = lines[index];
@@ -96,24 +149,7 @@ export function parsePinoDocument(content: string, customLevels?: Record<number,
         continue;
       }
 
-      const level = typeof asRecord.level === 'number' ? asRecord.level : undefined;
-      const levelLabel = level !== undefined && levelMap[level]
-        ? levelMap[level]
-        : 'unknown';
-
-      const timestamp = pickTimestamp(asRecord.time ?? asRecord.timestamp);
-      const msg = normalizeMessage(asRecord.msg ?? asRecord.message);
-
-      entries.push({
-        line: index + 1,
-        raw,
-        level,
-        levelLabel,
-        timestamp,
-        msg,
-        context: asRecord,
-        searchableText: `${msg} ${safeStringify(asRecord)}`.toLowerCase(),
-      });
+      entries.push(makeEntry(asRecord, index + 1, raw, levelMap));
     } catch {
       invalidLines.push(index + 1);
       invalidLineEntries.push({ line: index + 1, raw });
@@ -158,23 +194,7 @@ export function parsePinoLines(content: string, lineOffset: number, customLevels
         continue;
       }
 
-      const level = typeof asRecord.level === 'number' ? asRecord.level : undefined;
-      const levelLabel =
-        level !== undefined && levelMap[level] ? levelMap[level] : 'unknown';
-
-      const timestamp = pickTimestamp(asRecord.time ?? asRecord.timestamp);
-      const msg = normalizeMessage(asRecord.msg ?? asRecord.message);
-
-      entries.push({
-        line: absoluteLine,
-        raw,
-        level,
-        levelLabel,
-        timestamp,
-        msg,
-        context: asRecord,
-        searchableText: `${msg} ${safeStringify(asRecord)}`.toLowerCase(),
-      });
+      entries.push(makeEntry(asRecord, absoluteLine, raw, levelMap));
     } catch {
       invalidLines.push(absoluteLine);
       invalidLineEntries.push({ line: absoluteLine, raw });

@@ -703,6 +703,58 @@ class PinoLogViewer extends LitElement {
       transition: width 0.2s ease;
     }
 
+    .parse-error-banner {
+      padding: 14px 16px;
+      border: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+      border-radius: 8px;
+      background: color-mix(
+        in srgb,
+        var(--vscode-inputValidation-errorBackground, #5a1d1d) 55%,
+        transparent
+      );
+      display: grid;
+      gap: 8px;
+    }
+
+    .parse-error-banner .peb-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--vscode-inputValidation-errorForeground, #f48771);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .parse-error-banner .peb-body {
+      font-size: 12px;
+      color: var(--vscode-editor-foreground);
+      line-height: 1.6;
+    }
+
+    .parse-error-banner .peb-formats {
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      padding: 6px 10px;
+      border: 1px solid color-mix(in srgb, var(--vscode-editorWidget-border) 60%, transparent);
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--vscode-editor-background) 60%, transparent);
+    }
+
+    .parse-error-banner .peb-sample {
+      font-size: 11px;
+      font-family: var(--vscode-editor-font-family, monospace);
+      padding: 6px 10px;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--vscode-editor-background) 80%, transparent);
+      border: 1px solid color-mix(in srgb, var(--vscode-editorWidget-border) 50%, transparent);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
     .search-mode-row {
       display: flex;
       gap: 10px;
@@ -1426,6 +1478,40 @@ class PinoLogViewer extends LitElement {
     `;
   }
 
+  private _renderParseError(): TemplateResult | typeof nothing {
+    const { entries, invalidLineEntries, totalLines } = this._data;
+    // Show banner only when the file has content but no valid entries could be parsed
+    if (entries.length > 0 || totalLines === 0) {
+      return nothing;
+    }
+    const sampleLines = invalidLineEntries
+      .slice(0, 5)
+      .map((e) => e.raw.length > 200 ? e.raw.slice(0, 200) + '…' : e.raw)
+      .join('\n');
+
+    return html`
+      <div class="parse-error-banner">
+        <div class="peb-title">⚠ File could not be parsed as Pino log</div>
+        <div class="peb-body">
+          <strong>${invalidLineEntries.length}</strong> of <strong>${totalLines}</strong> lines failed to parse.
+          No valid log entries were found.
+        </div>
+        <div class="peb-formats">
+          <strong>Supported formats:</strong><br/>
+          &bull; <strong>NDJSON / JSONL / TXT</strong> — one JSON object per line (standard pino output)<br/>
+          &bull; <strong>JSON</strong> — a top-level JSON array of log objects, e.g. <code>[{"level":30,"msg":"..."},…]</code>
+        </div>
+        ${sampleLines
+          ? html`
+            <div>
+              <div style="font-size:11px;color:var(--vscode-descriptionForeground);margin-bottom:4px;">First ${Math.min(5, invalidLineEntries.length)} unparseable line(s):</div>
+              <div class="peb-sample">${sampleLines}</div>
+            </div>`
+          : nothing}
+      </div>
+    `;
+  }
+
   override render(): TemplateResult {
     type DisplayRow =
       | { kind: 'entry'; entry: PinoEntry }
@@ -1537,6 +1623,8 @@ class PinoLogViewer extends LitElement {
           </div>
         `
         : nothing}
+
+      ${this._renderParseError()}
 
       <section class="toolbar">
         <div class="toolbar-header">
