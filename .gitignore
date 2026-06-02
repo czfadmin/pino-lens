@@ -8,3 +8,4 @@ node_modules
 tmp
 tests/*.log
 .mypy_cache
+.DS_Store
